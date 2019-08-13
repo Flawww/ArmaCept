@@ -1,0 +1,8 @@
+CMakeFiles/
+.vscode/
+CMakeCache.txt
+*.cmake
+Makefile
+arma_hack
+log.txt
+
