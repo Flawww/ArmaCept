@@ -390,3 +390,30 @@ protected:
         return true;
     }
 };
+
+//! States of network client
+enum NetworkClientState : int32_t
+{
+  //! no client
+  NCSNone,
+  //! client is created
+  NCSCreated,
+  //! client is connected to server, message formats are registered
+  NCSConnected,
+  //! identity is created
+  NCSLoggedIn,
+  //! mission is selected
+  NCSMissionSelected,
+  //! server was asked to send / not send mission
+  NCSMissionAsked,
+  //! role was assigned (and confirmed)
+  NCSPlayerAssigned,
+  //! mission received
+  NCSMissionReceived,
+  //! island loaded, vehicles received
+  NCSGameLoaded,
+  //! client in game
+  NCSPlaying,
+  //! game was finished
+  NCSGameFinished,
+};

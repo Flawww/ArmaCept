@@ -37,21 +37,21 @@ a3parser::a3parser(/*uint8_t* client_ip, */uint8_t* server_ip/*, uint8_t* victim
 
 void a3parser::setup_callbacks() {
     SET_CALLBACK(TO_SERVER, MessageChat);
-    //SET_CALLBACK(TO_CLIENT, MessagePlayerRole);
-    //SET_CALLBACK(TO_SERVER, MessagePlayerRole);
 
-    SET_CALLBACK(TO_SERVER, MessageAskForApplyDoDamage);
+    ENABLE_CALLBACK(MessageAskForApplyDoDamage);
     SET_CALLBACK(TO_CLIENT, MessageWeatherUpdate);
                             
     // Create/Update function for entities
     SET_CALLBACK(TO_CLIENT, MessageLogin);
-    SET_CALLBACK(TO_CLIENT, MessageCreateVehicle);
-
+    ENABLE_CALLBACK(MessageCreateVehicle);
 }
 
 void a3parser::setup_printing() {
-    //ENABLE_PRINT(TO_SERVER, NetworkMessageDataSignatureAnswer);
-    //ENABLE_PRINT(TO_CLIENT, NetworkMessageTransferMissionFile);
+    ENABLE_PRINT(TO_SERVER, NetworkMessageDataSignatureAnswer);
+    ENABLE_PRINT(TO_CLIENT, NetworkMessageTransferMissionFile);
+
+    ENABLE_PRINT(TO_CLIENT, NetworkMessageTransferFile);
+    ENABLE_PRINT(TO_SERVER, NetworkMessageTransferFile);
 }
 
 bool a3parser::parse_packet(uint8_t* pkt) {
@@ -79,7 +79,8 @@ bool a3parser::parse_packet(uint8_t* pkt) {
 
     // packet going to the BEClient, ignore (for now, reversing this might be interesting)
     // and might be able to be used to bypass the heartbeat (by emulating it)
-    if (udph->uh_dport == 2306 || udph->uh_sport == 2306)
+    uint16_t be_port = htons(2306);
+    if (udph->uh_dport == be_port || udph->uh_sport == be_port)
      return false;
 
     int16_t datagram_size = ntohs(udph->len) - sizeof(udphdr);
@@ -295,7 +296,7 @@ bool a3parser::process_messages(NetworkMessageRaw* src, int to) {
                 return false;
             }
 
-            if (m_log_message[to][type]/* || to == TO_SERVER*/) {
+            if (!m_log_message[to][type]/* || to == TO_SERVER*/) {
                 m_enable_printing = true;
                 if (!printed_source) {
                     PRINT("====================[%s]====================\n", to == TO_CLIENT ? "server" : "client");
@@ -322,7 +323,7 @@ bool a3parser::process_messages(NetworkMessageRaw* src, int to) {
             return false;
         }
 
-        if (m_log_message[to][type] /*|| to == TO_SERVER*/) {
+        if (!m_log_message[to][type] /*|| to == TO_SERVER*/) {
             m_enable_printing = true;
             if (!printed_source) {
                 PRINT("====================[%s]====================\n", to == TO_CLIENT ? "server" : "client");

@@ -3,9 +3,6 @@
 #include "networkmessage.h"
 #include "netmessage_structs.h"
 
-// i just started writing some bs, this shit is fucking gay fuck
-
-
 enum vehicle_types {
     MAN_OBJECT,
     TANK_OBJECT,

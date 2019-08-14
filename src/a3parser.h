@@ -10,13 +10,14 @@
 
 // macros are evil blah blah blah fuck you
 #ifdef PRINTING
-#define PRINT(...) if (!m_enable_printing) { fprintf(m_out_file, __VA_ARGS__); }
-#define PRINT_SPACED(...) if (!m_enable_printing) { PRINT("%s", m_message_print_indentation.c_str()); PRINT(__VA_ARGS__) }
+#define PRINT(...) if (m_enable_printing) { fprintf(m_out_file, __VA_ARGS__); }
+#define PRINT_SPACED(...) if (m_enable_printing) { PRINT("%s", m_message_print_indentation.c_str()); PRINT(__VA_ARGS__) }
 #else
 #define PRINT(...)
 #define PRINT_SPACED(...)
 #endif
 
+#define ENABLE_CALLBACK(type) SET_CALLBACK(TO_SERVER, type); SET_CALLBACK(TO_CLIENT, type);
 #define SET_CALLBACK(to, type) SET_CALLBACK2(to, Network##type, type##Callback);
 #define SET_CALLBACK2(to, type, fn) m_callbacks[to][type] = fn;
 #define ENABLE_PRINT(to, type) m_log_message[to][type] = true;

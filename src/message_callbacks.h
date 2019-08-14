@@ -12,11 +12,28 @@ void MessageWeatherUpdateCallback(int to, unsigned char* buf, NetworkMessageRaw*
 
 void MessageAskForApplyDoDamageCallback(int to, unsigned char* buf, NetworkMessageRaw* src);
 
-// all the vehicle/player update messages
+// ================================================
+// All the callbacks needed for player + entitylist
+// ================================================
+
+// used to know when to clear the entity list (if you exit to lobby and is gonna reload the mission)
+void MessageClientStateCallback(int to, unsigned char* buf, NetworkMessageRaw* src);
+
+// used to remove entities
+void MessageDeleteObjectCallback(int to, unsigned char* buf, NetworkMessageRaw* src);
+void MessageForceDeleteObjectCallback(int to, unsigned char* buf, NetworkMessageRaw* src);
+void MessageDisposeObjectCallback(int to, unsigned char* buf, NetworkMessageRaw* src);
+
+// used for building the playerlist
 void MessageLoginCallback(int to, unsigned char* buf, NetworkMessageRaw* src);
+void MessageLogoutCallback(int to, unsigned char* buf, NetworkMessageRaw* src);
 
+// entity create funcs
 void MessageCreateVehicleCallback(int to, unsigned char* buf, NetworkMessageRaw* src);
+void MessageCreateHelicopterRTDCallback(int to, unsigned char* buf, NetworkMessageRaw* src);
+void MessageCreateTurretCallback(int to, unsigned char* buf, NetworkMessageRaw* src);
 
+// the various update funcs 
 void MessageUpdateManCallback(int to, unsigned char* buf, NetworkMessageRaw* src);
 void MessageUpdatePositionManCallback(int to, unsigned char* buf, NetworkMessageRaw* src);
 
@@ -38,5 +55,14 @@ void MessageUpdatePositionHelicopterRTDCallback(int to, unsigned char* buf, Netw
 void MessageUpdateShipCallback(int to, unsigned char* buf, NetworkMessageRaw* src);
 void MessageUpdatePositionShipCallback(int to, unsigned char* buf, NetworkMessageRaw* src);
 
-//void MessageUpdateParachuteCallback(int to, unsigned char* buf, NetworkMessageRaw* src);
-//void MessageUpdatePositionParachuteCallback(int to, unsigned char* buf, NetworkMessageRaw* src);
+void MessageUpdateAnimalCallback(int to, unsigned char* buf, NetworkMessageRaw* src);
+void MessageUpdatePositionAnimalCallback(int to, unsigned char* buf, NetworkMessageRaw* src);
+
+void MessageUpdateParachuteCallback(int to, unsigned char* buf, NetworkMessageRaw* src);
+void MessageUpdatePositionParachuteCallback(int to, unsigned char* buf, NetworkMessageRaw* src);
+
+void MessageUpdateInvisibleVehicleCallback(int to, unsigned char* buf, NetworkMessageRaw* src);
+void MessageUpdateVehicleCallback(int to, unsigned char* buf, NetworkMessageRaw* src);
+void MessageUpdatePositionVehicleCallback(int to, unsigned char* buf, NetworkMessageRaw* src);
+
+

@@ -41,15 +41,60 @@ void MessageWeatherUpdateCallback(int to, unsigned char* buf, NetworkMessageRaw*
     delete msg;
 }
 
-// generic CreateVehicle stuff
+// ==================================================================
+// The callbacks needed to create and manage the player + entity list
+// ==================================================================
+
+// used to know when to clear the entity list (if you exit to lobby and is gonna reload the mission)
+void MessageClientStateCallback(int to, unsigned char* buf, NetworkMessageRaw* src) {
+    auto msg = (MessageClientState*)buf;
+
+    delete msg;
+}
+
+// used to remove entities
+void MessageDeleteObjectCallback(int to, unsigned char* buf, NetworkMessageRaw* src) {
+    auto msg = (MessageDeleteObject*)buf;
+
+    delete msg;
+}
+void MessageForceDeleteObjectCallback(int to, unsigned char* buf, NetworkMessageRaw* src) {
+    auto msg = (MessageForceDeleteObject*)buf;
+
+    delete msg;
+}
+// DisposeObject is used for removing the players' entity (Or maybe all "Man" objects? doesn't matter)
+void MessageDisposeObjectCallback(int to, unsigned char* buf, NetworkMessageRaw* src) {
+    auto msg = (MessageDisposeObject*)buf;
+
+    delete msg;
+}
+
+// playerlist stuff
 void MessageLoginCallback(int to, unsigned char* buf, NetworkMessageRaw* src) {
     auto msg = (MessageLogin*)buf;
 
     delete msg;
 }
+void MessageLogoutCallback(int to, unsigned char* buf, NetworkMessageRaw* src) {
+    auto msg = (MessageLogout*)buf;
 
+    delete msg;
+}
+
+// entity create messages
 void MessageCreateVehicleCallback(int to, unsigned char* buf, NetworkMessageRaw* src) {
     auto msg = (MessageCreateVehicle*)buf;
+
+    delete msg;
+}
+void MessageCreateHelicopterRTDCallback(int to, unsigned char* buf, NetworkMessageRaw* src) {
+    auto msg = (MessageCreateHelicopterRTD*)buf;
+
+    delete msg;
+}
+void MessageCreateTurretCallback(int to, unsigned char* buf, NetworkMessageRaw* src) {
+    auto msg = (MessageCreateTurret*)buf;
 
     delete msg;
 }
@@ -134,6 +179,47 @@ void MessageUpdateShipCallback(int to, unsigned char* buf, NetworkMessageRaw* sr
 }
 void MessageUpdatePositionShipCallback(int to, unsigned char* buf, NetworkMessageRaw* src) {
     auto msg = (MessageUpdatePositionShip*)buf;
+
+    delete msg;
+}
+
+// animal
+void MessageUpdateAnimalCallback(int to, unsigned char* buf, NetworkMessageRaw* src) {
+    auto msg = (MessageUpdateAnimal*)buf;
+
+    delete msg;
+}
+void MessageUpdatePositionAnimalCallback(int to, unsigned char* buf, NetworkMessageRaw* src) {
+    auto msg = (MessageUpdatePositionAnimal*)buf;
+
+    delete msg;
+}
+
+//parachute/paraglide entities
+void MessageUpdateParachuteCallback(int to, unsigned char* buf, NetworkMessageRaw* src) {
+    auto msg = (MessageUpdateParachute*)buf;
+
+    delete msg;
+}
+void MessageUpdateParaglideCallback(int to, unsigned char* buf, NetworkMessageRaw* src) {
+    auto msg = (MessageUpdateParaglide*)buf;
+
+    delete msg;
+}
+
+// Others (Logic, Editor items, etc)
+void MessageUpdateInvisibleVehicleCallback(int to, unsigned char* buf, NetworkMessageRaw* src) {
+    auto msg = (MessageUpdateInvisibleVehicle*)buf;
+
+    delete msg;
+}
+void MessageUpdateVehicleCallback(int to, unsigned char* buf, NetworkMessageRaw* src) {
+    auto msg = (MessageUpdateVehicle*)buf;
+
+    delete msg;
+}
+void MessageUpdatePositionVehicleCallback(int to, unsigned char* buf, NetworkMessageRaw* src) {
+    auto msg = (MessageUpdatePositionVehicle*)buf;
 
     delete msg;
 }
