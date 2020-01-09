@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "a3parser.h"
 #include "message_scrambler.h"
+#include "cheat.h"
 
 a3parser::a3parser(/*uint8_t* client_ip, */uint8_t* server_ip/*, uint8_t* victimmac, uint8_t* targetmac, const uint8_t* my_mac*/): m_client_ports_set(false), m_server_ports_set(false), m_enable_printing(false), m_parted_to_client(nullptr), m_parted_to_server(nullptr) {
     //m_client_info = IpPortInfo(client_ip, server_ip);
@@ -42,8 +43,44 @@ void a3parser::setup_callbacks() {
     SET_CALLBACK(TO_CLIENT, MessageWeatherUpdate);
                             
     // Create/Update function for entities
+    SET_CALLBACK(TO_SERVER, MessageClientState);
+
+    ENABLE_CALLBACK(MessageDeleteObject);
+    ENABLE_CALLBACK(MessageForceDeleteObject);
+    ENABLE_CALLBACK(MessageDisposeObject);
+
     SET_CALLBACK(TO_CLIENT, MessageLogin);
+    SET_CALLBACK(TO_CLIENT, MessageLogout);
+
     ENABLE_CALLBACK(MessageCreateVehicle);
+    ENABLE_CALLBACK(MessageCreateHelicopterRTD);
+    ENABLE_CALLBACK(MessageCreateTurret);
+    ENABLE_CALLBACK(MessageCreateEntitySimple);
+    ENABLE_CALLBACK(MessageCreateObject);
+
+    ENABLE_CALLBACK(MessageUpdateMan);
+    ENABLE_CALLBACK(MessageUpdatePositionMan);
+    ENABLE_CALLBACK(MessageUpdateTank);
+    ENABLE_CALLBACK(MessageUpdatePositionTank);
+    ENABLE_CALLBACK(MessageUpdateCar);
+    ENABLE_CALLBACK(MessageUpdatePositionCar);
+    ENABLE_CALLBACK(MessageUpdateAirplane);
+    ENABLE_CALLBACK(MessageUpdatePositionAirplane);
+    ENABLE_CALLBACK(MessageUpdateHelicopterRTD);
+    ENABLE_CALLBACK(MessageUpdatePositionHelicopterRTD);
+    ENABLE_CALLBACK(MessageUpdateShip);
+    ENABLE_CALLBACK(MessageUpdatePositionShip);
+    ENABLE_CALLBACK(MessageUpdateAnimal);
+    ENABLE_CALLBACK(MessageUpdatePositionAnimal);
+    ENABLE_CALLBACK(MessageUpdateParachute);
+    ENABLE_CALLBACK(MessageUpdateParaglide);
+    ENABLE_CALLBACK(MessageUpdateTurret);
+    ENABLE_CALLBACK(MessageUpdatePositionTurret);
+
+    ENABLE_CALLBACK(MessageUpdateInvisibleVehicle);
+    ENABLE_CALLBACK(MessageUpdateVehicle);
+    ENABLE_CALLBACK(MessageUpdateObject);
+    ENABLE_CALLBACK(MessageUpdatePositionVehicle);
 }
 
 void a3parser::setup_printing() {

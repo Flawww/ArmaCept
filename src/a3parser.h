@@ -64,6 +64,8 @@ struct IpPortInfo {
     uint16_t m_src_port;
 };
 
+class network_hack;
+
 class a3parser {
 public:
     a3parser(): m_client_ports_set(false), m_server_ports_set(false), m_parted_to_client(nullptr), m_parted_to_server(nullptr) { };
@@ -175,3 +177,4 @@ private:
 };
 
 extern a3parser* g_parser;
+extern network_hack* g_cheat;

@@ -54,7 +54,12 @@ struct NetworkId {
     NetworkId(int c, int64_t i) { creator = c; id = i; }
     NetworkId() { creator = id = 0; }
 
+    bool valid() { return creator != 0 || id != 0; }
+    void reset() { creator = id = 0; }
+
     bool operator==(const NetworkId& other) const { return other.creator == creator && other.id == id; }
+    bool operator!=(const NetworkId& other) const { return other.creator != creator || other.id != id; }
+    NetworkId& operator=(const NetworkId& other) { creator = other.creator; id = other.id; return *this; }
 
     int creator;
     int64_t id;

@@ -1,7 +1,9 @@
 #include "pch.h"
 #include "a3parser.h"
+#include "cheat.h"
 
 a3parser* g_parser = nullptr;
+network_hack* g_cheat = nullptr;
 
 static int filter_callback(struct nfq_q_handle* queue, struct nfgenmsg* nfmsg, struct nfq_data* nfad, void* data) {
     nfqnl_msg_packet_hdr* ph = nfq_get_msg_packet_hdr(nfad);
@@ -53,6 +55,7 @@ int main(int argc, char** argv) {
     uint32_t addr = inet_addr(argv[1]);
     printf("Searching for arma server on ip %s\n", argv[1]);
     g_parser = new a3parser((uint8_t*)&addr);
+    g_cheat = new network_hack();
 
     int fd = nfq_fd(handler);
     static char buffer[0xFFFF];
@@ -66,6 +69,7 @@ int main(int argc, char** argv) {
     }
 
     delete g_parser;
+    delete g_cheat;
     nfq_close(handler);
     nfq_destroy_queue(queue);
 

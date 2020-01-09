@@ -1,17 +1,39 @@
 #include "pch.h"
 #include "message_callbacks.h"
 #include "a3parser.h"
+#include "cheat.h"
 
 void MessageChatCallback(int to, unsigned char* buf, NetworkMessageRaw* src) {
     auto msg = (MessageChat*)buf;
 
     if (to == TO_SERVER) {
-        auto chat = new MessageChat();
-        chat->_channel = 0;
-        chat->_name = "";
-        chat->_sender = NetworkId(0, 0);
-        chat->_text = "CHAT GOT'";
-        chat->queue_message(TO_CLIENT);
+        if (msg->_text == "dump") {
+            printf("Dumping all entities (%i)\n", g_cheat->m_objects.size());
+            for (auto& it : g_cheat->m_objects) {
+                auto& obj = it.second;
+
+                if (obj.m_object_type >= SIMPLE_OBJECT) {
+                    printf("%s\n", obj.m_entity_variables.m_type_name.c_str());
+                }
+            }
+            printf("\n");
+
+            printf("Players %i\n", g_cheat->m_players.size());
+            for (auto& it : g_cheat->m_players) {
+                auto player = it.second;
+                auto id = player.m_object;
+                auto obj = g_cheat->get_object(id);
+                if (obj) {
+                    printf("%s (%s)", player.m_name.c_str(), obj->m_entity_variables.m_type_name.c_str());
+                    auto veh = g_cheat->get_object(obj->m_entity_variables.m_parent_vehicle);
+                    if (veh)
+                        printf("\n    Vehicle: %s", veh->m_entity_variables.m_type_name.c_str());
+                }
+                printf("\n");
+            }
+
+            printf("\n\n");
+        }
     }
 
     // delete the allocated buffer for this message (delete the actual casted object so the destructors/unallocators gets called)
@@ -49,6 +71,11 @@ void MessageWeatherUpdateCallback(int to, unsigned char* buf, NetworkMessageRaw*
 void MessageClientStateCallback(int to, unsigned char* buf, NetworkMessageRaw* src) {
     auto msg = (MessageClientState*)buf;
 
+    // this means we are in the lobby asking for mission, reset the entitylist
+    // (but keep playerlist untouched)
+    if (to == TO_SERVER && msg->_clientState == 5)
+        g_cheat->object_reset();
+
     delete msg;
 }
 
@@ -56,16 +83,22 @@ void MessageClientStateCallback(int to, unsigned char* buf, NetworkMessageRaw* s
 void MessageDeleteObjectCallback(int to, unsigned char* buf, NetworkMessageRaw* src) {
     auto msg = (MessageDeleteObject*)buf;
 
+    g_cheat->delete_object(NetworkId(msg->_creator, msg->_id));
+
     delete msg;
 }
 void MessageForceDeleteObjectCallback(int to, unsigned char* buf, NetworkMessageRaw* src) {
     auto msg = (MessageForceDeleteObject*)buf;
+
+    g_cheat->delete_object(msg->_object);
 
     delete msg;
 }
 // DisposeObject is used for removing the players' entity (Or maybe all "Man" objects? doesn't matter)
 void MessageDisposeObjectCallback(int to, unsigned char* buf, NetworkMessageRaw* src) {
     auto msg = (MessageDisposeObject*)buf;
+
+    g_cheat->delete_object(msg->_object);
 
     delete msg;
 }
@@ -74,10 +107,23 @@ void MessageDisposeObjectCallback(int to, unsigned char* buf, NetworkMessageRaw*
 void MessageLoginCallback(int to, unsigned char* buf, NetworkMessageRaw* src) {
     auto msg = (MessageLogin*)buf;
 
+    // add new player using their dpnid as key
+    g_cheat->m_players.emplace(msg->_dpnid, network_player(msg));
+
     delete msg;
 }
 void MessageLogoutCallback(int to, unsigned char* buf, NetworkMessageRaw* src) {
     auto msg = (MessageLogout*)buf;
+
+    auto player = g_cheat->get_player(msg->_dpnid);
+    if (player) {
+        auto obj = g_cheat->get_object(player->m_object);
+        if (obj) // reset the remote player of the entity the dood was controlling
+            obj->m_entity_variables.m_controllable_variables.m_remote_player = 1;
+
+        // they leaving, we remove the entry for them.
+        g_cheat->m_players.erase(msg->_dpnid);
+    }
 
     delete msg;
 }
@@ -86,15 +132,63 @@ void MessageLogoutCallback(int to, unsigned char* buf, NetworkMessageRaw* src) {
 void MessageCreateVehicleCallback(int to, unsigned char* buf, NetworkMessageRaw* src) {
     auto msg = (MessageCreateVehicle*)buf;
 
+    auto obj = network_object( VEHICLE_OBJECT, NetworkId(msg->_objectCreator, msg->_objectId), msg->_objectPosition, 
+                            network_object_entity(msg->_orientation, msg->_type, msg->_shape, msg->_idVehicle), 
+                            network_object_turret());
+
+    g_cheat->add_object(obj);
+
     delete msg;
 }
 void MessageCreateHelicopterRTDCallback(int to, unsigned char* buf, NetworkMessageRaw* src) {
     auto msg = (MessageCreateHelicopterRTD*)buf;
 
+    auto obj = network_object( HELICOPTER_OBJECT, NetworkId(msg->_objectCreator, msg->_objectId), msg->_objectPosition, 
+                        network_object_entity(msg->_orientation, msg->_type, msg->_shape, msg->_idVehicle), 
+                        network_object_turret());
+
+    g_cheat->add_object(obj);
+
     delete msg;
 }
 void MessageCreateTurretCallback(int to, unsigned char* buf, NetworkMessageRaw* src) {
     auto msg = (MessageCreateTurret*)buf;
+
+    auto obj = network_object( TURRET_OBJECT, NetworkId(msg->_objectCreator, msg->_objectId), msg->_objectPosition, 
+                    network_object_entity(), 
+                    network_object_turret(msg->_vehicle));
+
+    g_cheat->add_object(obj);
+
+    // add the turret to the owner vehicle
+    auto veh = g_cheat->get_object(msg->_vehicle);
+    if (veh) {
+        veh->m_turrets.push_back(obj.m_id);
+    }
+    else
+        printf("Non-existant turret owner vehicle\n");
+
+    delete msg;
+}
+void MessageCreateEntitySimpleCallback(int to , unsigned char* buf, NetworkMessageRaw* src) {
+    auto msg = (MessageCreateEntitySimple*)buf;
+
+    auto obj = network_object( SIMPLE_OBJECT, NetworkId(msg->_objectCreator, msg->_objectId), msg->_objectPosition, 
+                        network_object_entity(msg->_orientation, msg->_type, msg->_shape, msg->_idVehicle), 
+                        network_object_turret());
+
+    g_cheat->add_object(obj);
+
+    delete msg;
+}
+void MessageCreateObjectCallback(int to, unsigned char* buf, NetworkMessageRaw* src) {
+    auto msg = (MessageCreateObject*)buf;
+
+    auto obj = network_object( OBJECT_OBJECT, NetworkId(msg->_objectCreator, msg->_objectId), msg->_objectPosition, 
+                    network_object_entity(), 
+                    network_object_turret());
+
+    g_cheat->add_object(obj);
 
     delete msg;
 }
@@ -103,10 +197,16 @@ void MessageCreateTurretCallback(int to, unsigned char* buf, NetworkMessageRaw* 
 void MessageUpdateManCallback(int to, unsigned char* buf, NetworkMessageRaw* src) {
     auto msg = (MessageUpdateMan*)buf;
 
+    g_cheat->update_controllable(MAN_OBJECT, NetworkId(msg->_objectCreator, msg->_objectId), 
+                                msg->_objectPosition, msg->_targetSide, msg->_remotePlayer);
+
     delete msg;
 }
 void MessageUpdatePositionManCallback(int to, unsigned char* buf, NetworkMessageRaw* src) {
     auto msg = (MessageUpdatePositionMan*)buf;
+
+    g_cheat->update_position_general(NetworkId(msg->_objectCreator, msg->_objectId), 
+                                    msg->_objectPosition, msg->_orientation, msg->_speed);
     
     delete msg;
 }
@@ -115,22 +215,16 @@ void MessageUpdatePositionManCallback(int to, unsigned char* buf, NetworkMessage
 void MessageUpdateTankCallback(int to, unsigned char* buf, NetworkMessageRaw* src) {
     auto msg = (MessageUpdateTank*)buf;
 
+    g_cheat->update_vehicle(TANK_OBJECT, NetworkId(msg->_objectCreator, msg->_objectId), 
+                            msg->_objectPosition, msg->_targetSide, msg->_driver, msg->_copilot, msg->_manCargo);
+
     delete msg;
 }
 void MessageUpdatePositionTankCallback(int to, unsigned char* buf, NetworkMessageRaw* src) {
     auto msg = (MessageUpdatePositionTank*)buf;
 
-    delete msg;
-}
-
-// turret
-void MessageUpdateTurretCallback(int to, unsigned char* buf, NetworkMessageRaw* src) {
-    auto msg = (MessageUpdateTurret*)buf;
-
-    delete msg;
-}
-void MessageUpdatePositionTurretCallback(int to, unsigned char* buf, NetworkMessageRaw* src) {
-    auto msg = (MessageUpdatePositionTurret*)buf;
+    g_cheat->update_position_general(NetworkId(msg->_objectCreator, msg->_objectId), 
+                                    msg->_objectPosition, msg->_orientation, msg->_speed);
 
     delete msg;
 }
@@ -139,10 +233,16 @@ void MessageUpdatePositionTurretCallback(int to, unsigned char* buf, NetworkMess
 void MessageUpdateCarCallback(int to, unsigned char* buf, NetworkMessageRaw* src) {
     auto msg = (MessageUpdateCar*)buf;
 
+    g_cheat->update_vehicle(CAR_OBJECT, NetworkId(msg->_objectCreator, msg->_objectId), 
+                            msg->_objectPosition, msg->_targetSide, msg->_driver, msg->_copilot, msg->_manCargo);
+
     delete msg;
 }
 void MessageUpdatePositionCarCallback(int to, unsigned char* buf, NetworkMessageRaw* src) {
     auto msg = (MessageUpdatePositionCar*)buf;
+
+    g_cheat->update_position_general(NetworkId(msg->_objectCreator, msg->_objectId), 
+                                    msg->_objectPosition, msg->_orientation, msg->_speed);
 
     delete msg;
 }
@@ -151,10 +251,16 @@ void MessageUpdatePositionCarCallback(int to, unsigned char* buf, NetworkMessage
 void MessageUpdateAirplaneCallback(int to, unsigned char* buf, NetworkMessageRaw* src) {
     auto msg = (MessageUpdateAirplane*)buf;
 
+    g_cheat->update_vehicle(PLANE_OBJECT, NetworkId(msg->_objectCreator, msg->_objectId), 
+                            msg->_objectPosition, msg->_targetSide, msg->_driver, msg->_copilot, msg->_manCargo);
+
     delete msg;
 }
 void MessageUpdatePositionAirplaneCallback(int to, unsigned char* buf, NetworkMessageRaw* src) {
     auto msg = (MessageUpdatePositionAirplane*)buf;
+
+    g_cheat->update_position_general(NetworkId(msg->_objectCreator, msg->_objectId), 
+                                    msg->_objectPosition, msg->_orientation, msg->_speed);
 
     delete msg;
 }
@@ -163,10 +269,16 @@ void MessageUpdatePositionAirplaneCallback(int to, unsigned char* buf, NetworkMe
 void MessageUpdateHelicopterRTDCallback(int to, unsigned char* buf, NetworkMessageRaw* src) {
     auto msg = (MessageUpdateHelicopterRTD*)buf;
 
+    g_cheat->update_vehicle(HELICOPTER_OBJECT, NetworkId(msg->_objectCreator, msg->_objectId), 
+                            msg->_objectPosition, msg->_targetSide, msg->_driver, msg->_copilot, msg->_manCargo);
+
     delete msg;
 }
 void MessageUpdatePositionHelicopterRTDCallback(int to, unsigned char* buf, NetworkMessageRaw* src) {
     auto msg = (MessageUpdatePositionHelicopterRTD*)buf;
+
+    g_cheat->update_position_general(NetworkId(msg->_objectCreator, msg->_objectId), 
+                                    msg->_objectPosition, msg->_orientation, msg->_speed);
 
     delete msg;
 }
@@ -175,10 +287,16 @@ void MessageUpdatePositionHelicopterRTDCallback(int to, unsigned char* buf, Netw
 void MessageUpdateShipCallback(int to, unsigned char* buf, NetworkMessageRaw* src) {
     auto msg = (MessageUpdateShip*)buf;
 
+    g_cheat->update_vehicle(SHIP_OBJECT, NetworkId(msg->_objectCreator, msg->_objectId), 
+                            msg->_objectPosition, msg->_targetSide, msg->_driver, msg->_copilot, msg->_manCargo);
+
     delete msg;
 }
 void MessageUpdatePositionShipCallback(int to, unsigned char* buf, NetworkMessageRaw* src) {
     auto msg = (MessageUpdatePositionShip*)buf;
+
+    g_cheat->update_position_general(NetworkId(msg->_objectCreator, msg->_objectId), 
+                                    msg->_objectPosition, msg->_orientation, msg->_speed);
 
     delete msg;
 }
@@ -187,10 +305,16 @@ void MessageUpdatePositionShipCallback(int to, unsigned char* buf, NetworkMessag
 void MessageUpdateAnimalCallback(int to, unsigned char* buf, NetworkMessageRaw* src) {
     auto msg = (MessageUpdateAnimal*)buf;
 
+    g_cheat->update_controllable(ANIMAL_OBJECT, NetworkId(msg->_objectCreator, msg->_objectId), 
+                                msg->_objectPosition, msg->_targetSide, msg->_remotePlayer);
+
     delete msg;
 }
 void MessageUpdatePositionAnimalCallback(int to, unsigned char* buf, NetworkMessageRaw* src) {
     auto msg = (MessageUpdatePositionAnimal*)buf;
+
+    g_cheat->update_position_general(NetworkId(msg->_objectCreator, msg->_objectId), 
+                                    msg->_objectPosition, msg->_orientation, msg->_speed);
 
     delete msg;
 }
@@ -199,10 +323,32 @@ void MessageUpdatePositionAnimalCallback(int to, unsigned char* buf, NetworkMess
 void MessageUpdateParachuteCallback(int to, unsigned char* buf, NetworkMessageRaw* src) {
     auto msg = (MessageUpdateParachute*)buf;
 
+    g_cheat->update_vehicle(PARACHUTE_OBJECT, NetworkId(msg->_objectCreator, msg->_objectId), 
+                            msg->_objectPosition, msg->_targetSide, msg->_driver, msg->_copilot, msg->_manCargo);
+
     delete msg;
 }
 void MessageUpdateParaglideCallback(int to, unsigned char* buf, NetworkMessageRaw* src) {
     auto msg = (MessageUpdateParaglide*)buf;
+
+    g_cheat->update_vehicle(PARACHUTE_OBJECT, NetworkId(msg->_objectCreator, msg->_objectId), 
+                            msg->_objectPosition, msg->_targetSide, msg->_driver, msg->_copilot, msg->_manCargo);
+
+    delete msg;
+}
+
+// turret
+void MessageUpdateTurretCallback(int to, unsigned char* buf, NetworkMessageRaw* src) {
+    auto msg = (MessageUpdateTurret*)buf;
+
+    g_cheat->update_turret(msg);
+
+    delete msg;
+}
+void MessageUpdatePositionTurretCallback(int to, unsigned char* buf, NetworkMessageRaw* src) {
+    auto msg = (MessageUpdatePositionTurret*)buf;
+
+    g_cheat->update_position_turret(msg);
 
     delete msg;
 }
@@ -211,15 +357,32 @@ void MessageUpdateParaglideCallback(int to, unsigned char* buf, NetworkMessageRa
 void MessageUpdateInvisibleVehicleCallback(int to, unsigned char* buf, NetworkMessageRaw* src) {
     auto msg = (MessageUpdateInvisibleVehicle*)buf;
 
+    g_cheat->update_controllable(INVISIBLE_OBJECT, NetworkId(msg->_objectCreator, msg->_objectId), 
+                                msg->_objectPosition, msg->_targetSide, msg->_remotePlayer);
+
     delete msg;
 }
 void MessageUpdateVehicleCallback(int to, unsigned char* buf, NetworkMessageRaw* src) {
     auto msg = (MessageUpdateVehicle*)buf;
 
+    g_cheat->update_object(VEHICLE_OBJECT, NetworkId(msg->_objectCreator, msg->_objectId),
+                            msg->_objectPosition, msg->_targetSide);
+
     delete msg;
 }
 void MessageUpdatePositionVehicleCallback(int to, unsigned char* buf, NetworkMessageRaw* src) {
     auto msg = (MessageUpdatePositionVehicle*)buf;
+
+    g_cheat->update_position_general(NetworkId(msg->_objectCreator, msg->_objectId), 
+                                    msg->_objectPosition, msg->_orientation, msg->_speed);
+
+    delete msg;
+}
+void MessageUpdateObjectCallback(int to, unsigned char* buf, NetworkMessageRaw* src) {
+    auto msg = (MessageUpdateObject*)buf;
+
+    g_cheat->update_object(OBJECT_OBJECT, NetworkId(msg->_objectCreator, msg->_objectId),
+                        msg->_objectPosition, -1);
 
     delete msg;
 }
