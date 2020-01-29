@@ -43,8 +43,6 @@ void MessageChatCallback(int to, unsigned char* buf, NetworkMessageRaw* src) {
 void MessagePlayerRoleCallback(int to, unsigned char* buf, NetworkMessageRaw* src) {
     auto msg = (MessagePlayerRole*)buf;
 
-    msg->reencode_message(src);
-
     delete msg;
 }
 

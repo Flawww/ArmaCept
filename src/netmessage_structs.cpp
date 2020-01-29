@@ -1,3 +1,4 @@
+#pragma once
 #include "pch.h"
 #include "netmessage_structs.h"
 #include "a3parser.h"

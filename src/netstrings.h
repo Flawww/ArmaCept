@@ -1,6 +1,6 @@
 #pragma once
 
-static const char* NetIdMoves[ ] = {
+static const char* NetIdMoves[] = {
     "amovpercmevasraswrfldf",
     "adthpercmstpslowwrfldnon_r07",
     "amovpercmwlksraswrfldf",
@@ -702,7 +702,7 @@ static const char* NetIdMoves[ ] = {
 };
 static int NetIdMovesSize = 698;
 
-static const char* NetIdStrings[ ] = {
+static const char* NetIdStrings[] = {
     "HandGrenade",
     "30Rnd_556x45_Stanag",
     "50Rnd_127x107_DSHKM",

@@ -284,6 +284,7 @@ struct MessageMissionHeader {
     bool _skipLobby;
     std::string _fileNameReal;
     std::string _serverStatsId;
+    bool _unsafeCVL;
 
     MessageMissionHeader() {};
     void queue_message(int to);

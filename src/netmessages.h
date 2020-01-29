@@ -478,7 +478,7 @@ enum {
     NETWORK_MESSAGE_COUNT
 };
 
-static const char* NetworkMessageNames[ ] = {
+static const char* NetworkMessageNames[] = {
     "NetworkMessageMsgFormatItem",
     "NetworkMessageMsgFormat",
     "NetworkMessagePlayer",

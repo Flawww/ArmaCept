@@ -41,6 +41,7 @@ void a3parser::setup_callbacks() {
 
     ENABLE_CALLBACK(MessageAskForApplyDoDamage);
     SET_CALLBACK(TO_CLIENT, MessageWeatherUpdate);
+    SET_CALLBACK(TO_CLIENT, MessagePlayerRole);
                             
     // Create/Update function for entities
     SET_CALLBACK(TO_SERVER, MessageClientState);
