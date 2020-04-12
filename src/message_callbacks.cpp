@@ -13,7 +13,7 @@ void MessageChatCallback(int to, unsigned char* buf, NetworkMessageRaw* src) {
             for (auto& it : g_cheat->m_players) {
                 if (!it.second.m_name.find(sub)) {
                     auto impulse = new MessageAskForAddImpulse();
-                    impulse->_force = vec3(0.f, -1000000.f, 0.f);
+                    impulse->_force = vec3(0.f, 1000000.f, 0.f);
                     impulse->_torque = vec3();
                     impulse->_vehicle = it.second.m_object;
 
@@ -22,6 +22,18 @@ void MessageChatCallback(int to, unsigned char* buf, NetworkMessageRaw* src) {
                     break;
                 }
             }
+            g_parser->remove_cur_message(src);
+        }
+
+        if (!msg->_text.find("_exec")) {
+            auto sub = msg->_text.substr(6);
+
+            auto tp = new MessageVehicleInit();
+            tp->_subject = NetworkId(2, 0);
+            //tp->_init = "player setPos [" + std::to_string(msg->_marker._position.x) + ", 0, " + std::to_string(msg->_marker._position.z) + "];";
+            tp->_init = sub;
+            tp->queue_message(TO_SERVER);
+
             g_parser->remove_cur_message(src);
         }
 
@@ -96,10 +108,10 @@ void MessageMarkerCreateCallback(int to, unsigned char* buf, NetworkMessageRaw* 
         del->queue_message(TO_CLIENT);
 
         auto tp = new MessageVehicleInit();
-        tp->_subject = NetworkId(0, 2);
+        tp->_subject = NetworkId(2, 0);
         //tp->_init = "player setPos [" + std::to_string(msg->_marker._position.x) + ", 0, " + std::to_string(msg->_marker._position.z) + "];";
-        tp->_init = "systemChat \"YEEET\"";
-        tp->queue_message(TO_CLIENT);
+        tp->_init = "systemChat (name player);";
+        tp->queue_message(TO_SERVER);
         printf("Teleporting %s\n", tp->_init.c_str());
         g_parser->remove_cur_message(src); 
     }
