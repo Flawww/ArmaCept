@@ -1,6 +1,6 @@
 #pragma once
 #include "networkmessage.h"
-#include "format_init.h"
+#include "formats_init.h"
 
 typedef void(*MsgCallback)(int to, unsigned char* buf, NetworkMessageRaw* src);
 
@@ -11,6 +11,8 @@ void MessagePlayerRoleCallback(int to, unsigned char* buf, NetworkMessageRaw* sr
 void MessageWeatherUpdateCallback(int to, unsigned char* buf, NetworkMessageRaw* src);
 
 void MessageAskForApplyDoDamageCallback(int to, unsigned char* buf, NetworkMessageRaw* src);
+
+void MessageMarkerCreateCallback(int to, unsigned char* buf, NetworkMessageRaw* src);
 
 // ================================================
 // All the callbacks needed for player + entitylist

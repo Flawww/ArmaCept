@@ -1,9 +1,10 @@
 #pragma once
 #include "pch.h"
 #include "network_key_tables.h"
+#include "be_network_key_tables.h"
 #include "networkmessage.h"
 #include "aes.h"
-#include "format_init.h"
+#include "formats_init.h"
 #include "message_callbacks.h"
 
 #define PRINTING
@@ -68,7 +69,7 @@ class network_hack;
 
 class a3parser {
 public:
-    a3parser(): m_client_ports_set(false), m_server_ports_set(false), m_parted_to_client(nullptr), m_parted_to_server(nullptr) { };
+    a3parser(): m_client_ports_set(false), m_server_ports_set(false), m_parted_to_client(nullptr), m_parted_to_server(nullptr), m_be_message(false) { };
     a3parser(/*uint8_t* client_ip, */uint8_t* server_ip/*, uint8_t* victimmac, uint8_t* targetmac, const uint8_t* my_mac*/);
 
     ~a3parser() { 
@@ -111,9 +112,9 @@ public:
     IpPortInfo m_server_info;
     IpPortInfo m_client_info;
 
+    void print_ascii(uint8_t* data, uint16_t len, uint8_t to);
 private:
     void print_hex(uint8_t* data, uint16_t len, uint8_t to);
-    void print_ascii(uint8_t* data, uint16_t len, uint8_t to);
     void print_header(uint8_t* data);
     bool check_crc(uint8_t* data, uint16_t len);
 
@@ -155,6 +156,12 @@ private:
     aes_context m_server_dec;
     aes_context m_server_enc;
 
+    bool m_be_message;
+    aes_context m_be_client_dec;
+    aes_context m_be_client_enc;
+    aes_context m_be_server_dec;
+    aes_context m_be_server_enc;
+
     // logging shit
     bool m_enable_printing;
     FILE* m_out_file;
@@ -169,11 +176,6 @@ private:
 
     // saves the indentention (for correctly formatting messages we log)
     std::string m_message_print_indentation;
-
-    // just some info about the actual networking shite
-    uint8_t m_my_mac[6];
-    uint8_t m_victimmac[6];
-    uint8_t m_targetmac[6];
 };
 
 extern a3parser* g_parser;

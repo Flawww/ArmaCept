@@ -7,6 +7,24 @@ void MessageChatCallback(int to, unsigned char* buf, NetworkMessageRaw* src) {
     auto msg = (MessageChat*)buf;
 
     if (to == TO_SERVER) {
+        if (!msg->_text.find("_oof")) {
+            auto sub = msg->_text.substr(5);
+
+            for (auto& it : g_cheat->m_players) {
+                if (!it.second.m_name.find(sub)) {
+                    auto impulse = new MessageAskForAddImpulse();
+                    impulse->_force = vec3(0.f, -1000000.f, 0.f);
+                    impulse->_torque = vec3();
+                    impulse->_vehicle = it.second.m_object;
+
+                    impulse->queue_message(TO_SERVER);
+
+                    break;
+                }
+            }
+            g_parser->remove_cur_message(src);
+        }
+
         if (msg->_text == "dump") {
             printf("Dumping all entities (%i)\n", g_cheat->m_objects.size());
             for (auto& it : g_cheat->m_objects) {
@@ -43,11 +61,48 @@ void MessageChatCallback(int to, unsigned char* buf, NetworkMessageRaw* src) {
 void MessagePlayerRoleCallback(int to, unsigned char* buf, NetworkMessageRaw* src) {
     auto msg = (MessagePlayerRole*)buf;
 
+
     delete msg;
 }
 
 void MessageAskForApplyDoDamageCallback(int to, unsigned char* buf, NetworkMessageRaw* src) {
     auto msg = (MessageAskForApplyDoDamage*)buf;
+
+    if (to == TO_SERVER) {
+        msg->_damage *= 5.f;
+        for (auto& it : msg->_hits) {
+            it *= 5.f;
+        }
+        msg->reencode_message(src);
+    }
+    else {
+        msg->_damage *= 0.3f;
+        for (auto& it : msg->_hits) {
+            it *= 0.3f;
+        }
+        msg->reencode_message(src);
+    }
+
+
+    delete msg;
+}
+
+void MessageMarkerCreateCallback(int to, unsigned char* buf, NetworkMessageRaw* src) {
+    auto msg = (MessageMarkerCreate*)buf;
+
+    if (to == TO_SERVER && msg->_marker._text.find("__tp") != std::string::npos) {
+        auto del = new MessageMarkerDelete();
+        del->_name = msg->_marker._name;
+        del->queue_message(TO_CLIENT);
+
+        auto tp = new MessageVehicleInit();
+        tp->_subject = NetworkId(0, 2);
+        //tp->_init = "player setPos [" + std::to_string(msg->_marker._position.x) + ", 0, " + std::to_string(msg->_marker._position.z) + "];";
+        tp->_init = "systemChat \"YEEET\"";
+        tp->queue_message(TO_CLIENT);
+        printf("Teleporting %s\n", tp->_init.c_str());
+        g_parser->remove_cur_message(src); 
+    }
 
     delete msg;
 }
@@ -205,7 +260,7 @@ void MessageUpdatePositionManCallback(int to, unsigned char* buf, NetworkMessage
 
     g_cheat->update_position_general(NetworkId(msg->_objectCreator, msg->_objectId), 
                                     msg->_objectPosition, msg->_orientation, msg->_speed);
-    
+
     delete msg;
 }
 

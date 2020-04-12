@@ -105,7 +105,7 @@ static void scramble_header_part1(uint8_t* buf, int loop_count, uint8_t* encrypt
     }
 }
 
-static void scramble_message_contents(uint8_t* buf) {
+static void scramble_message_contents(uint8_t* buf, unsigned char* key_table) {
     int v5 = 24;
     int v6 = *((uint32_t*)buf + 2) ^ ((*((uint32_t*)buf + 2) ^ 0x3D0000) >> 16);
     int16_t v7 = (0xEB2D * (9 * v6 ^ (9 * v6 >> 4)) ^ (0x27D4EB2D * (9 * v6 ^ (9 * v6 >> 4)) >> 15)) & 0x7FFF;
@@ -113,7 +113,7 @@ static void scramble_message_contents(uint8_t* buf) {
     if (*(uint16_t*)buf >= 0x18u && *(uint16_t*)buf <= 2048) {
         uint8_t* v8 = buf + 24;
         do {
-            *(++v8 - 1) ^= key_table_1[(uint16_t)v5++ + v7 & 0x7FF];
+            *(++v8 - 1) ^= key_table[(uint16_t)v5++ + v7 & 0x7FF];
         } while (v5 <= *(uint16_t*)buf);
     }
 }

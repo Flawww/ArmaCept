@@ -5,7 +5,7 @@
 void network_hack::add_object(network_object obj) {
     int64_t hash = netid64(obj.m_id);
 
-    printf("Adding object %i:%i (%lx)\n", obj.m_id.creator, obj.m_id.id, hash);
+    //printf("Adding object %i:%i (%lx)\n", obj.m_id.creator, obj.m_id.id, hash);
     m_objects.emplace(hash, obj);
 }
 
@@ -14,7 +14,7 @@ void network_hack::add_object(network_object obj) {
 void network_hack::delete_object(NetworkId id) {
     auto it = m_objects.find(netid64(id));
     if (it == m_objects.end()) {
-        printf("Tried deleting non-existant object\n");
+        //printf("Tried deleting non-existant object\n");
         return;
     }
 
@@ -68,7 +68,7 @@ network_player* network_hack::get_player(int dpnid) {
 void network_hack::update_object(int type, NetworkId id, vec3 pos, int side) {
     auto obj = get_object(id);
     if (!obj) {
-        printf("Recieved update for non-existanst entity\n");
+        //printf("Recieved update for non-existanst entity\n");
         return;
     }
 
@@ -84,7 +84,7 @@ void network_hack::update_controllable(int type, NetworkId id, vec3 pos, int sid
 
     auto obj = get_object(id);
     if (!obj) {
-        printf("Recieved update for non-existanst entity\n");
+        //printf("Recieved update for non-existanst entity\n");
         return;
     }
 
@@ -112,7 +112,7 @@ void network_hack::update_controllable(int type, NetworkId id, vec3 pos, int sid
 void network_hack::update_vehicle(int type, NetworkId id, vec3 pos, int side, NetworkId driver, NetworkId copilot, std::vector<NetworkId> passengers) {
     auto obj = get_object(id);
     if (!obj) {
-        printf("Recieved update for non-existanst entity\n");
+        //printf("Recieved update for non-existanst entity\n");
         return;
     }
     
@@ -192,7 +192,7 @@ void network_hack::update_turret(MessageUpdateTurret* msg) {
     auto id = NetworkId(msg->_objectCreator, msg->_objectId);
     auto turret_obj = get_object(id);
     if (!turret_obj) {
-        printf("Recieved update for non-existant turret\n");
+        //printf("Recieved update for non-existant turret\n");
         return;
     }
 
@@ -204,7 +204,7 @@ void network_hack::update_turret(MessageUpdateTurret* msg) {
 
     auto owner_obj = get_object(msg->_owner);
     if (!owner_obj) {
-        printf("Owner vehicle of turret not found\n");
+        //printf("Owner vehicle of turret not found\n");
         return;
     }
 
@@ -240,7 +240,7 @@ void network_hack::update_position_general(NetworkId id, vec3 pos, matrix3x3 ori
 void network_hack::update_position_turret(MessageUpdatePositionTurret* msg) {
     auto turret_obj = get_object(NetworkId(msg->_objectCreator, msg->_objectId));
     if (!turret_obj) {
-        printf("Tried updating position for non-existant turret\n");
+        //printf("Tried updating position for non-existant turret\n");
     }
 }
 
