@@ -1,5 +1,5 @@
-## ArmaCept
-A pretty complete framework for for developing network hacks for the game ![ARMA 3](https://arma3.com)
+### ArmaCept
+A pretty complete framework for for developing network hacks for the game [ARMA 3](https://arma3.com)
 
 This was my first dabble with doing network-level cheating and it was a lot of fun. Because of ARMA's clientside authorative nature a network hack is extremely powerful and you can accomplish basically anything you could internally. 
 
@@ -8,11 +8,11 @@ To be able to use this properly you need an extra device running linux for which
 The way it's done here is using NFQUEUE (libnetfilter_queue) to inspect all packets.
 
 The setup I used was: 
-Connect main PC to my laptop which is running linux (and will be running the hack). The laptop was then connected to WiFi, and that WiFi connection was routed through to the PC. At this point you can simply set up the iptables to make NFQUEUE intercept the packets. Refer to `start.sh`
+Connect main PC to my laptop which is running linux (and will be running the hack). The laptop was then connected to WiFi, and that WiFi connection was routed through to the PC. At this point you can simply set up the iptables to make NFQUEUE intercept the packets. Refer to [start.sh](start.sh)
 
 ## The Framework
-ARMA has a LOT of different netmessages, luckily they all have very descriptive names. Take a look `netmessages.h` for a complete list of them. 
-For the whole list of netmessages, complete with the associated datastructure for that message, look at `netmessage_structs.h`
+ARMA has a LOT of different netmessages, luckily they all have very descriptive names. Take a look [netmessages.h](src/netmessages.h) for a complete list of them. 
+For the whole list of netmessages, complete with the associated datastructure for that message, look at [netmessage_structs.h](src/netmessage_structs.h)
 The name of the message along with the struct should be plenty of info about what's going on, for instance:
 ```cpp
 struct MessageChat {
@@ -28,7 +28,7 @@ struct MessageChat {
 };
 ```
 For more information about a certain message, you can add printing for that message in `a3parser::setup_printing`
-A full log of all netmessages sent in a quick session (on a more or less empty server) can be seen in the file `full_server_log.txt`
+A full log of all netmessages sent in a quick session (on a more or less empty server) can be seen in the file [full_server_log.txt](full_server_log.txt)
 
 For setting up a callback for a certain message, add it in `a3parser::setup_callbacks`
 I already have some example callbacks set up, look at those to get see how the messages should be handled. 
