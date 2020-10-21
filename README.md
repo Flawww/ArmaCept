@@ -1,10 +1,10 @@
 # ArmaCept
 A pretty complete framework for for developing network hacks for the game [ARMA 3](https://arma3.com)
 
-This was my first dabble with doing network-level cheating and it was a lot of fun. Because of ARMA's clientside authorative nature a network hack is extremely powerful and you can accomplish basically anything you could internally. 
+This was my first dabble with network-level cheating and it was a lot of fun. Because of ARMA's clientside authorative nature, a network hack is extremely powerful and you can accomplish basically anything you could internally. 
 
 ## Setup
-To be able to use this properly you need an extra device running linux for which you can route your network connection through. (Alternatively use something like ARP-Spoofing).
+To be able to use this properly you need an extra device running linux which you can route your network connection through. (Alternatively use something like ARP-Spoofing).
 The way it's done here is using NFQUEUE (libnetfilter_queue) to inspect all packets.
 
 The setup I used was: 
@@ -180,7 +180,7 @@ for (int i = 0; i < m_networkmessage_count; i++) {
 ```
 
 ### Structs with full names
-Dumping the structs (with the real name of the member variables) it's going to be a bit harder. Luckily, ARMA has a lot of "pseudo"-relection with this, which allows us to get the proper names for everything.
+Dumping the structs (with the real name of the member variables) is going to be a bit harder. Luckily, ARMA has a lot of "pseudo"-reflection with this, which allows us to get the proper names for everything.
 
 First we're going to need to define some structs
 ```cpp
