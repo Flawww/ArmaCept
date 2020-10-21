@@ -121,7 +121,7 @@ For a rebuilt version of the scrambling functions, look at [message_scrambler.h]
 
 This part was harder to find when getting started since the Virtual Reality engine uses a lot of virtual calls, and the netmessages are handled in a queue so you can not simply follow the execution.
 
-The message encryption/decryption is done by a couple of the members of the class [I]NetworkEncryptorClient[/I] and [I]NetworkEncryptorServer[/I].
+The message encryption/decryption is done by a couple of the members of the class *NetworkEncryptorClient* and *NetworkEncryptorServer*.
 
 ![encryptor](https://i.imgur.com/VPGnFmo.png)
 
