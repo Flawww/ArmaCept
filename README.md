@@ -1,4 +1,4 @@
-### ArmaCept
+# ArmaCept
 A pretty complete framework for for developing network hacks for the game [ARMA 3](https://arma3.com)
 
 This was my first dabble with doing network-level cheating and it was a lot of fun. Because of ARMA's clientside authorative nature a network hack is extremely powerful and you can accomplish basically anything you could internally. 
@@ -69,7 +69,7 @@ void MessageAskForApplyDoDamageCallback(int to, unsigned char* buf, NetworkMessa
 }
 ```
 
-# Entitylist
+### Entitylist
 Because the fact that we are on the network level, we can't access the entitylist of the game, and we have to keep track of all the entities and objects manually by parsing the messages that transmit this information (including the positions and all other information about objects). This is already set up, so you can simply use the entity list in from `g_cheat`
 I recommend looking at `cheat.cpp` and `message_callbacks.cpp` to understand how this works.
 
@@ -97,5 +97,133 @@ Example of using it in practice to throw a specific player using the *AddImpulse
 ```
 
 ## Encryption
-The packets are encrypted in 3 stages. First of all, the message body is encrypted with AES, then the whole message is scrambled by using something that seems to be their in-house "scrambler", and finally the header is scrambled. The various keys and keytables are quite easy to find in memory (And it completely doable with BattlEye disabled!). The current keytables in the repo are **OUTDATED**, so I'll leave finding those keytables as an exercise to the reader.
-A tip for where to begin is breakpointing the recvfrom function and looking around (Pay special attention to the thisptr of the caller)
+Netmessage/packet encryption is done in 3 layers in ARMA 3. 
+For decryption (encryption is the same but reverse obviously):
+
+### Layer 1 and 2 (Scrambling)
+
+In the function that calls *recvfrom* (which for the record is a member of the NetPeerUDP class) you will spot the following block of code
+
+![recvfrom](https://i.imgur.com/kCBeqYr.png)
+
+as can be seen here, it first (un)scrambles the header, and then goes on to (un)scramble the message itself. By inspecting the header scramble function closer we see
+
+![scramblin](https://i.imgur.com/mf5tDxt.png)
+
+and you guessed it! Those members that it passes into these functions are the keytables (and size of the keytables) for the header!
+Similarly the function that scrambles the message contents also reads from the netpeer object to get the keytable used for it.
+
+So to find these keytables you can simply break in any of the NetPeerUDP functions and inspect the thisptr to find the keytables you are looking for.
+
+For a rebuilt version of the scrambling functions, look at [message_scrambler.h](src/message_scrambler.h)
+
+### Layer 3 - AES (Message encryption)
+
+This part was harder to find when getting started since the Virtual Reality engine uses a lot of virtual calls, and the netmessages are handled in a queue so you can not simply follow the execution.
+
+The message encryption/decryption is done by a couple of the members of the class [I]NetworkEncryptorClient[/I] and [I]NetworkEncryptorServer[/I].
+
+![encryptor](https://i.imgur.com/VPGnFmo.png)
+
+These functions are responsible for more than simply crypting with AES. They pad the messages with a random amount of random bytes, I assume to make finding patterns when inspecting packets harder (?), they also perform some verification by CRC16'ing the whole message etc. Those functions rebuilt can be found 
+[here](https://github.com/Flawww/ArmaCept/blob/master/src/a3parser.cpp#L1574)
+
+These functions also call into functions which looks somewhat like this
+
+![aescrypt](https://i.imgur.com/NT0p3m3.png)
+
+which is quite easy to recognize it being AES.
+Easiet way to find the keys here would again be placing breakpoints and inspecting the arguments (especially the second arg, RDX).
+
+
+I haven't looked into how these keys are derived, but they do change on every game update so I assume it uses the version alongside some other information to derive them, if someone finds out, please let me know :)
+
+## Updating/Dumping netmessage names and structs for updating
+ARMA helps us with this and makes it a breeze. There is a function CreateNetworkMessage that takes an int as argument, this constructs an object of the type of network message you pass into it. To see what the highest number is, just look at the switch case in the function.
+
+You can simply call this function for each number that has an associated message and then get the name of the message by looking at the RTTI of the object you get back since it will contain the vtable of the message.
+
+```cpp
+const char* c_network_dumper::get_rtti_name(uintptr_t module_base, void* vtbl) {
+    auto addr = *(uintptr_t*)(uintptr_t(vtbl) - sizeof(uintptr_t));
+
+    auto class_hierarchy = *(int32_t*)(addr + 0x10);
+    auto hierarchy_ptr = module_base + class_hierarchy;
+    auto array_offset = *(int32_t*)(hierarchy_ptr + 0xC);
+    auto array_ptr = module_base + array_offset;
+
+    auto descriptor_offset = *(int32_t*)(array_ptr);
+    auto descriptor_ptr = module_base + descriptor_offset;
+
+    auto typedescriptor_offset = *(int32_t*)(descriptor_ptr);
+    auto typedescriptor_ptr = module_base + typedescriptor_offset;
+
+    auto name = (const char*)(typedescriptor_ptr + 0x14);
+    
+    auto len = strlen(name);
+    auto rtti_name = strdup(name);
+    rtti_name[len - 2] = 0; // -2 as to not include the @@ characters that RTTI includes
+
+    return rtti_name;
+}
+   
+// in the dump func:
+
+for (int i = 0; i < m_networkmessage_count; i++) {
+    void* msg = create_netmsg(i); // [E8 *? ? ? ?] 48 8B 0C FB
+    void* vtbl = *(void**)msg;
+ 
+    const char* name = get_rtti_name(g_modules[ARMA], vtbl);
+    printf("%s\n", name);
+    free(name);
+}
+```
+
+### Structs with full names
+Dumping the structs (with the real name of the member variables) it's going to be a bit harder. Luckily, ARMA has a lot of "pseudo"-relection with this, which allows us to get the proper names for everything.
+
+First we're going to need to define some structs
+```cpp
+struct NetworkFormatSpecs {
+    NetworkDataType m_type;
+    NetworkCompressionType m_compression;
+    void* m_def_value;
+};
+
+struct NetworkMessageFormatItem {
+    c_armastring* m_name; // name of the item ("reflection", gives us the name the game actually uses for this member)
+    NetworkFormatSpecs m_specs; // specs of this item
+    int m_offset;
+    char pad_001C[4];
+};
+
+class NetworkMessageFormat {
+public:
+    void* vtbl;
+    c_autoarray<NetworkMessageFormatItem> m_items;
+};
+```
+
+Click here to find the definitions for: [NetworkDataType](https://github.com/Flawww/ArmaCept/blob/master/src/networkmessage.h#L224) or [NetworkCompressionTypes](https://github.com/Flawww/ArmaCept/blob/master/src/networkmessage.h#L125)
+
+The game sets up a global variable 
+```cpp
+// can be found with: 7D 0F [48 8D 0D *? ? ? ?] 48 63 C2
+NetworkMessageFormat* g_MsgFormats[NETWORK_MESSAGE_COUNT];
+```
+
+Now to dump the struct, we can simply access the message we want to dump with its index, loop through the AutoArray for the items this struct (format*) has, and format it all nicely. It's worth noting that there are some recursion going on, so you want to make sure you only dump them once/solve for dependencies properly so you don't get stuck in infinite recursion lol
+
+And there we go, now we got a nicely formatted struct for a netmessage with its proper names like its set up in the game and get something like below (And it also gives us information on how we should parse this format with the specified compression method on the network level, but that is another subject)
+```cpp
+struct MessageAskForApplyDoDamage {
+    NetworkId _who;
+    NetworkId _owner;
+    NetworkId _shotInstigator;
+    std::string _ammo;
+    std::string _weapon;
+    float _damage;
+    std::vector<float> _hits;
+    bool _direct;
+};
+```
