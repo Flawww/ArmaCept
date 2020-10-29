@@ -1,5 +1,5 @@
 # ArmaCept
-A pretty complete framework for for developing network hacks for the game [ARMA 3](https://arma3.com)
+A pretty complete framework for developing network hacks for the game [ARMA 3](https://arma3.com)
 
 This was my first dabble with network-level cheating and it was a lot of fun. Because of ARMA's clientside authorative nature, a network hack is extremely powerful and you can accomplish basically anything you could internally. 
 
