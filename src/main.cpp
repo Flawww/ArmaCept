@@ -27,7 +27,7 @@ static int filter_callback(struct nfq_q_handle* queue, struct nfgenmsg* nfmsg, s
 
 int main(int argc, char** argv) {
     if (argc != 2) {
-        printf("Invalid amount or arguments (%i recieved, 1 expected) \n", argc - 1);
+        printf("Invalid amount of arguments (%i recieved, 1 expected) \n", argc - 1);
         return 0;
     }
 
